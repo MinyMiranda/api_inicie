@@ -1,4 +1,5 @@
 <?php
+
 namespace App;
 
 class HomeClass
@@ -9,19 +10,34 @@ class HomeClass
      * @param array $responseEnd
      * @return Array
      */
-    public function percentageCases(Array $responseEnd)
+    public function percentageCases(array $responseStart, array $responseEnd)
     {
+
         // Calculando o percentual de casos em cada cidade
         $result = [];
-        foreach ($responseEnd['results'] as $value) {
-            if ($value['confirmed'] == 0 || $value['estimated_population'] == 0) {
-                $percentage = $value['confirmed'];
+        foreach ($responseEnd as $key => $end) {
+
+            // Verificando se já chegou ao fim do primeiro array segundo a chave
+            $endStart = count($responseStart) <= $key    ? true : false;
+
+            // Caso já tenha chegado ao final start recebe o primeiro valor do array
+            $start = !$endStart ? $responseStart[$key] : $responseStart[0];
+
+            // Se os valores não sejam válidos não se realiza cálculo e assume o valor 0
+            // Se a cidade existia anteriomente calcula a porcentagem de aumento
+            // Senão calcula a porcentagem com base nos casos que surgiram
+            if ($end['confirmed'] == 0 || $end['estimated_population'] == 0) {
+                $percentage = 0;
+            } 
+            else if (!$endStart && $start['city'] == $end['city']) {
+                $increase = $end['confirmed'] - $start['confirmed'];
+                $percentage = ($increase / $end['estimated_population']) * 100;
             } else {
-                $percentage = ($value['confirmed'] / $value['estimated_population']) * 100;
+                $percentage = ($end['confirmed'] / $end['estimated_population']) * 100;
             }
             $newData = [
                 "percentage" => $percentage,
-                "nameCity" => $value['city']
+                "nameCity" => $end['city']
             ];
             array_push($result, $newData);
         }
