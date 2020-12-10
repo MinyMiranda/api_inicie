@@ -17,7 +17,7 @@ class HomeController extends Controller
         $this->token = config("app.token_api_brasil");
     }
     /**
-     * Retorna as 10 cidades com o maior percentual de casos  
+     * Envia para Endpoint as 10 cidades com o maior percentual de casos no período 
      * 
      * @param string    $state
      * @param string    $dateStart
@@ -30,28 +30,40 @@ class HomeController extends Controller
         ])->get($this->api . "/dataset/covid19/caso/data/", [
             'state' => $state,
             'date' => $dateStart
-        ])->json();
+        ]);
 
         $responseEnd = Http::withHeaders([
             'Authorization' => "Token " . $this->token
         ])->get($this->api . "/dataset/covid19/caso/data/", [
             'state' => $state,
             'date' => $dateEnd
-        ])->json();
+        ]);
 
-        // Pegando o top 10 cidades com maior percentual de casos
-        $topList = new HomeClass();
-        $percentageCases = $topList->percentageCases($responseEnd);
+        // Se ocorrer tudo certo prosseguir para pegar as 10 cidades e enviar para o endpoint
+        // Senão retorna erro
+        if ($responseEnd->successful()) {
 
-        // Enviando resultado para API
-        foreach ($percentageCases as $key => $value) {
-            Http::withHeaders([
-                'MeuNome' => "Ysmine"
-            ])->post("https://us-central1-lms-nuvem-mestra.cloudfunctions.net/testApi", [
-                'id' => $key,
-                'nomeCidade' => $value['nameCity'],
-                'percentualDeCasos' => $value['percentage'],
-            ]);
+            // Pegando Json do Resultado da pesquisa na API
+            $responseStart=$responseStart->json();
+            $responseEnd=$responseEnd->json();
+
+            // Pegando o top 10 cidades com maior percentual de casos
+            $topList = new HomeClass();
+            $percentageCases = $topList->percentageCases($responseStart['results'], $responseEnd['results']);
+
+            // Enviando resultado para API
+            foreach ($percentageCases as $key => $value) {
+                Http::withHeaders([
+                    'MeuNome' => "Ysmine"
+                ])->post("https://us-central1-lms-nuvem-mestra.cloudfunctions.net/testApi", [
+                    'id' => $key,
+                    'nomeCidade' => $value['nameCity'],
+                    'percentualDeCasos' => $value['percentage'],
+                ]);
+            }
+        }
+        else{
+            return $responseEnd;
         }
     }
 }
