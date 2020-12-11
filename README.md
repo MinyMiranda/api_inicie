@@ -19,4 +19,3 @@ O projeto consiste em uma aplicação simples que foi feito algumas etapas:
 ## Uso
  Passe pela URL a sigla do estado, a data inicial e a data final. <br>
  Exemplo: http://inicie.local/PR/2020-05-10/2020-05-18
->>>>>>> master
